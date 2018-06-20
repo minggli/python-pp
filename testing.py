@@ -5,7 +5,7 @@ testing
 
 brush up hypothesis testing and plotting.
 """
-
+import pandas as pd
 import numpy as np
 from scipy.stats import ttest_ind, ttest_1samp, kstest, chisquare
 from scipy.stats import chi2_contingency
@@ -59,11 +59,10 @@ if p < alpha:
     print('H0 rejected that a is not consistent to expected frequencies.')
 
 # Chi-Squared test of independence
-# TODO: figure out null hypothesis of this test.
-a = np.random.choice(2, 1000, p=[.1, .9])
-b = np.random.randint(0, 2, 1000)
-obs = np.vstack((np.bincount(a), np.bincount(b)))
-chisq, p, dof, ex = chi2_contingency(obs)
+df = pd.DataFrame({'favor': [138, 64],
+                   'indifferent': [83, 67],
+                   'opposed': [64, 84]}, index=['democrat', 'republican'])
+chisq, p, dof, ex = chi2_contingency(df)
 print(chisq, p)
 if p < alpha:
-    print('H0 rejected that there is independence has been rejected.')
+    print('H0 that there is independence between a & b. is rejected.')
