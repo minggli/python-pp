@@ -4,7 +4,7 @@ import warnings
 
 import pandas as pd
 import numpy as np
-
+from scipy.linalg import solve_triangular
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -37,6 +37,8 @@ def ols(X, y):
     # R.T @ R @ B = R.T @ Q.T @ y
     # R @ B = Q.T @ y
     # R is upper triangle so solve using back subsubstitution or invert R
+    # back subsubstitution:
+    # Ax = y where y = Q.T @ y and A = R
     # inverting:
     # R**-1 @ R @ B = R**-1 @ Q.T @ y
     # B = R**(-1) @ Q.T @ y
@@ -49,7 +51,7 @@ def ols(X, y):
     y -= y_offset
     q, r = np.linalg.qr(X)
     assert np.allclose(X, q @ r)
-    theta = np.linalg.inv(r) @ q.T @ y
+    theta = solve_triangular(r, q.T @ y, lower=False)
     intercept = y_offset - np.dot(X_offset, theta.T)
     return intercept, theta
 
@@ -102,10 +104,11 @@ plt.legend()
 plt.show()
 
 # Prediction
-x = 18
+x = 15
 ols_yhat = predict_ols(x, intercept, theta)
 bayes_pred = bayesian_predictive_distribution(x, trace)
 sns.kdeplot(bayes_pred, label='Bayes Posterior Predictive Distribution')
 plt.vlines(x=ols_yhat, ymin=0, ymax=2.5,
            label='OLS Prediction', colors='red', linestyles='--')
+plt.legend(loc='upper left')
 plt.show()
