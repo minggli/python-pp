@@ -6,7 +6,7 @@ import warnings
 import pandas as pd
 
 import pymc3 as pm
-
+import theano.tensor as tt
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LinearRegression
 
@@ -58,6 +58,16 @@ ax1.scatter(encoded_mat['studytime'], encoded_mat['failures'],
 ax1.set_xlabel('study time')
 ax1.set_ylabel('failures')
 ax1.set_zlabel('G1 score')
-plt.show()
+# plt.show()
+
 
 model = pm.Model()
+with model:
+    # bayesian linear regression
+    intercept = pm.Normal('intercept', mu=0, sd=10)
+    θ_vector = pm.Normal('θ', mu=0, sd=10, shape=5)
+    μ = pm.Deterministic('μ', intercept + tt.dot(subset_mat, θ_vector))
+    σ = pm.HalfNormal('σ', sd=10)
+
+    y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=label)
+    trace = pm.sample(500)
