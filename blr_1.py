@@ -13,9 +13,8 @@ from sklearn.linear_model import LinearRegression
 import pymc3 as pm
 
 warnings.simplefilter('ignore')
-mpl.rcParams['figure.dpi'] = 80
-mpl.rcParams['figure.figsize'] = 5, 10
-plt.style.use('ggplot')
+mpl.rcParams['figure.dpi'] = 100
+mpl.style.use('ggplot')
 # np.random.seed(0)
 
 
@@ -95,7 +94,7 @@ with model:
 
 sns.lmplot('Duration', 'Calories', df, fit_reg=False)
 pm.plot_posterior_predictive_glm(
-    trace, samples=100, eval=base, linewidth=.3, color='blue', alpha=0.8,
+    trace, samples=100, eval=base, linewidth=.3, color='r', alpha=0.8,
     label='Bayesian Posterior Predictive',
     lm=lambda x, sample: sample['intercept'] + sample['theta'] * x)
 plt.plot(base, yhat, color='black', linestyle='dashed',
