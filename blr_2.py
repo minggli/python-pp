@@ -4,6 +4,7 @@
 import warnings
 
 import pandas as pd
+import numpy as np
 
 import pymc3 as pm
 import theano.tensor as tt
@@ -17,6 +18,8 @@ import matplotlib.pyplot as plt
 warnings.simplefilter('ignore')
 mpl.rcParams['figure.dpi'] = 150
 plt.style.use('ggplot')
+
+np.random.seed(0)
 
 
 def encode_categorical(dataframe):
@@ -50,7 +53,7 @@ bck_select = RFE(LinearRegression(), 5, 1)
 bck_select.fit(features, label)
 ranks = tuple(zip(features, bck_select.ranking_))
 subset_mat = features.loc[:, bck_select.support_]
-print(subset_mat.head())
+
 fig = plt.figure(figsize=(10, 10), dpi=100)
 ax1 = Axes3D(fig)
 ax1.scatter(encoded_mat['studytime'], encoded_mat['failures'],
@@ -60,14 +63,20 @@ ax1.set_ylabel('failures')
 ax1.set_zlabel('G1 score')
 # plt.show()
 
+X = subset_mat.copy()
+y = label.copy()
 
 model = pm.Model()
 with model:
     # bayesian linear regression
     intercept = pm.Normal('intercept', mu=0, sd=10)
     θ_vector = pm.Normal('θ', mu=0, sd=10, shape=5)
-    μ = pm.Deterministic('μ', intercept + tt.dot(subset_mat, θ_vector))
+    μ = intercept + tt.dot(X, θ_vector)
     σ = pm.HalfNormal('σ', sd=10)
 
-    y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=label)
-    trace = pm.sample(500)
+    y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=y)
+    trace = pm.sample(1000, tune=1000)
+
+
+pm.traceplot(trace)
+plt.show()
