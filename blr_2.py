@@ -16,7 +16,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 warnings.simplefilter('ignore')
-mpl.rcParams['figure.dpi'] = 150
+mpl.rcParams['figure.dpi'] = 100
 plt.style.use('ggplot')
 
 np.random.seed(0)
@@ -75,8 +75,7 @@ with model:
     σ = pm.HalfNormal('σ', sd=10)
 
     y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=y)
-    trace = pm.sample(1000, tune=1000)
+    vi = pm.fit()
+    pm.plot_posterior(vi.sample(1000))
 
-
-pm.traceplot(trace)
 plt.show()
