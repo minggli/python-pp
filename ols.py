@@ -10,8 +10,8 @@ def ols(X, y):
     # Cholesky factorize covariance matrix into upper and lower triangles
     # L @ L.T @ B = X.T @ y
     # let L.T @ B = r and X.T @ y = d
-    # solve linear system L @ r = d using back substitution
-    # then solve linear sysetm L @ B = r using forward substitution
+    # solve linear system L @ r = d using forward substitution
+    # then solve linear sysetm L.T @ B = r using back substitution
     X, y = np.array(X, dtype=np.float32), np.array(y, dtype=np.float32)
     if X.ndim == 1:
         X = X[:, np.newaxis]
@@ -22,9 +22,9 @@ def ols(X, y):
     y -= y_offset
     L = np.linalg.cholesky(X.T @ X)
     d = X.T @ y
-    # back substituion
-    r = solve_triangular(L, d, lower=True)
     # forward substituion
+    r = solve_triangular(L, d, lower=True)
+    # back substituion
     theta = solve_triangular(L.T, r, lower=False)
     intercept = y_offset - np.dot(X_offset, theta)
     return intercept, theta
