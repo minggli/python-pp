@@ -7,20 +7,24 @@ import pandas as pd
 import numpy as np
 
 import pymc3 as pm
-import theano.tensor as tt
+
+from scipy.stats import mode
+
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import seaborn as sns
+
+from ols import ols
 
 warnings.simplefilter('ignore')
 mpl.rcParams['figure.dpi'] = 100
 plt.style.use('ggplot')
-
-np.random.seed(0)
 
 
 def encode_categorical(dataframe):
@@ -37,22 +41,32 @@ def encode_categorical(dataframe):
     return pd.get_dummies(dataframe, columns=cats), mapping
 
 
+def predict(X, trace):
+    return trace['intercept'][:, np.newaxis] + trace['θ'] @ X.T
+
+
+def ols_predict(X, intercept, theta):
+    return intercept + X @ theta
+
+
 mat = pd.read_csv('./data/student-mat.csv', sep=';')
 mat.drop(['G2', 'G3'], axis=1, inplace=True)
 mat = mat.select_dtypes(exclude=['object'])
 
 # EDA
-mat.info(verbose=True, memory_usage='deep', null_counts=True)
+# mat.info(verbose=True, memory_usage='deep', null_counts=True)
 
 encoded_mat, categorical_mapping = encode_categorical(mat)
 features = encoded_mat[encoded_mat.columns.difference(['G1'])]
 label = encoded_mat[['G1']]
 
 # feature selection, 5 continuous random variables only for this exercise
-bck_select = RFE(LinearRegression(), 5, 1)
+n_var = 2
+bck_select = RFE(LinearRegression(), n_var, 1)
 bck_select.fit(features, label)
 ranks = tuple(zip(features, bck_select.ranking_))
 subset_mat = features.loc[:, bck_select.support_]
+print(subset_mat.head())
 
 fig = plt.figure(figsize=(10, 10), dpi=100)
 ax1 = Axes3D(fig)
@@ -70,13 +84,38 @@ model = pm.Model()
 with model:
     # bayesian linear regression
     intercept = pm.Normal('intercept', mu=0, sd=10)
-    θ_vector = pm.Normal('θ', mu=0, sd=10, shape=5)
-    μ = intercept + tt.dot(X_train, θ_vector)
+    θ_vector = pm.Normal('θ', mu=0, sd=10, shape=n_var)[:, np.newaxis]
+    μ = intercept + pm.math.dot(X_train, θ_vector)
     σ = pm.HalfNormal('σ', sd=10)
-
+    # y ~ N(intercept + θ.T @ X, σ)
     y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=y_train)
-    vi = pm.fit()
-    posterior = vi.sample(1000)
+    posterior = pm.sample(1000, progressbar=True)
+    try:
+        pm.traceplot(posterior)
+    except AttributeError:
+        pass
     pm.plot_posterior(posterior)
 
 plt.show()
+
+# prediction
+yhat = predict(X_test, posterior).T
+
+ols_intercept, ols_theta = ols(X_train, y_train)
+ols_yhat = ols_predict(X_test, ols_intercept, ols_theta)
+
+for i in range(3):
+    n = np.random.randint(0, y_test.shape[0])
+    sns.kdeplot(yhat[n], label='Bayesian Posterior Predictive_{}'.format(n))
+    plt.vlines(x=ols_yhat[n], ymin=0, ymax=10,
+               label='OLS Prediction_{}'.format(n), colors='blue',
+               linestyles='--')
+    plt.vlines(x=y_test.values[n], ymin=0, ymax=10,
+               label='Actual_{}'.format(n), colors='red', linestyles='-')
+    plt.legend(loc='upper left')
+    plt.show()
+
+ols_mse = mean_squared_error(y_test, ols_yhat)
+print(ols_mse)
+mse = mean_squared_error(y_test, mode(yhat, axis=1)[0])
+print(mse)
