@@ -13,6 +13,8 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
+from xgboost import XGBRegressor
+
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -59,7 +61,7 @@ features = encoded_mat[encoded_mat.columns.difference(['G1'])]
 label = encoded_mat[['G1']]
 
 # feature selection, 5 continuous random variables only for this exercise
-n_var = 5
+n_var = 2
 bck_select = RFE(LinearRegression(), n_var, 1)
 bck_select.fit(features, label)
 ranks = tuple(zip(features, bck_select.ranking_))
@@ -86,7 +88,7 @@ with model:
     σ = pm.HalfNormal('σ', sd=10)
     # y ~ N(intercept + θ.T @ X, σ)
     y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=y_train)
-    posterior = pm.sample(1000)
+    posterior = pm.sample(1000, tune=1000)
     try:
         pm.traceplot(posterior)
     except AttributeError:
@@ -101,14 +103,21 @@ yhat = predict(X_test, posterior).T
 ols_intercept, ols_theta = ols(X_train, y_train)
 ols_yhat = ols_predict(X_test, ols_intercept, ols_theta)
 
+xgr = XGBRegressor()
+xgr.fit(X_train, y_train)
+xgr_yhat = xgr.predict(X_test)
+
 for i in range(3):
     n = np.random.randint(0, y_test.shape[0])
     sns.kdeplot(yhat[n], label='Bayesian Posterior Predictive_{}'.format(n))
     plt.vlines(x=ols_yhat[n], ymin=0, ymax=10,
-               label='OLS Prediction_{}'.format(n), colors='blue',
+               label='manual OLS Prediction_{}'.format(n), colors='blue',
                linestyles='--')
     plt.vlines(x=y_test.values[n], ymin=0, ymax=10,
                label='Actual_{}'.format(n), colors='red', linestyles='-')
+    plt.vlines(x=xgr_yhat[n], ymin=0, ymax=10,
+               label='Xgboost_{}'.format(n), colors='black',
+               linestyles='--')
     plt.legend(loc='upper left')
     plt.show()
 
@@ -118,5 +127,7 @@ print('Baseline (uniform assumption) produced test set Mean Squared Error: '
       '{0:.4f}'.format(base_mse))
 ols_mse = mean_squared_error(y_test, ols_yhat)
 print('OLS produced test set Mean Squared Error: {0:.4f}'.format(ols_mse))
+xgr_mse = mean_squared_error(y_test, xgr_yhat)
+print('Xgboost produced test set Mean Squared Error: {0:.4f}'.format(xgr_mse))
 mse = mean_squared_error(y_test, yhat.mean(axis=1))
 print('BLR produced test set Mean Squared Error: {0:.4f}'.format(mse))
