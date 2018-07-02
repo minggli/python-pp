@@ -61,7 +61,7 @@ features = encoded_mat[encoded_mat.columns.difference(['G1'])]
 label = encoded_mat[['G1']]
 
 # feature selection, 5 continuous random variables only for this exercise
-n_var = 2
+n_var = 5
 bck_select = RFE(LinearRegression(), n_var, 1)
 bck_select.fit(features, label)
 ranks = tuple(zip(features, bck_select.ranking_))
@@ -89,7 +89,7 @@ with model:
     σ = pm.HalfNormal('σ', sd=10)
     # y ~ N(intercept + θ.T @ X, σ)
     y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=y_train)
-    posterior = pm.sample(1000, progressbar=True)
+    posterior = pm.sample(1000)
     try:
         pm.traceplot(posterior)
     except AttributeError:
@@ -115,7 +115,11 @@ for i in range(3):
     plt.legend(loc='upper left')
     plt.show()
 
+base_mse = mean_squared_error(
+                y_test, np.array([y_train.mean()] * y_test.shape[0]))
+print('Baseline (training set mean) produced test set Mean Squared Error: '
+      '{0:.4f}'.format(base_mse))
 ols_mse = mean_squared_error(y_test, ols_yhat)
-print(ols_mse)
+print('OLS produced test set Mean Squared Error: {0:.4f}'.format(ols_mse))
 mse = mean_squared_error(y_test, mode(yhat, axis=1)[0])
-print(mse)
+print('BLR produced test set Mean Squared Error: {0:.4f}'.format(mse))
