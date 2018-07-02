@@ -73,7 +73,6 @@ ax1.scatter(encoded_mat['studytime'], encoded_mat['failures'],
 ax1.set_xlabel('study time')
 ax1.set_ylabel('failures')
 ax1.set_zlabel('G1 score')
-# plt.show()
 
 X_train, X_test, y_train, y_test = \
     train_test_split(subset_mat, label, train_size=.8, test_size=.2)
@@ -82,8 +81,8 @@ model = pm.Model()
 with model:
     # bayesian linear regression
     intercept = pm.Normal('intercept', mu=0, sd=10)
-    θ_vector = pm.Normal('θ', mu=0, sd=10, shape=n_var)[:, np.newaxis]
-    μ = intercept + pm.math.dot(X_train, θ_vector)
+    θ_vector = pm.Normal('θ', mu=0, sd=10, shape=n_var)
+    μ = intercept + pm.math.dot(X_train, θ_vector[:, np.newaxis])
     σ = pm.HalfNormal('σ', sd=10)
     # y ~ N(intercept + θ.T @ X, σ)
     y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=y_train)
@@ -115,7 +114,7 @@ for i in range(3):
 
 base_mse = mean_squared_error(
                 y_test, np.array([y_train.mean()] * y_test.shape[0]))
-print('Baseline (training set mean) produced test set Mean Squared Error: '
+print('Baseline (uniform assumption) produced test set Mean Squared Error: '
       '{0:.4f}'.format(base_mse))
 ols_mse = mean_squared_error(y_test, ols_yhat)
 print('OLS produced test set Mean Squared Error: {0:.4f}'.format(ols_mse))
