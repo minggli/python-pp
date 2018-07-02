@@ -10,6 +10,7 @@ import pymc3 as pm
 import theano.tensor as tt
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib as mpl
@@ -41,7 +42,6 @@ mat.drop(['G2', 'G3'], axis=1, inplace=True)
 mat = mat.select_dtypes(exclude=['object'])
 
 # EDA
-print(mat.head().transpose())
 mat.info(verbose=True, memory_usage='deep', null_counts=True)
 
 encoded_mat, categorical_mapping = encode_categorical(mat)
@@ -63,19 +63,20 @@ ax1.set_ylabel('failures')
 ax1.set_zlabel('G1 score')
 # plt.show()
 
-X = subset_mat.copy()
-y = label.copy()
+X_train, X_test, y_train, y_test = \
+    train_test_split(subset_mat, label, train_size=.8, test_size=.2)
 
 model = pm.Model()
 with model:
     # bayesian linear regression
     intercept = pm.Normal('intercept', mu=0, sd=10)
     θ_vector = pm.Normal('θ', mu=0, sd=10, shape=5)
-    μ = intercept + tt.dot(X, θ_vector)
+    μ = intercept + tt.dot(X_train, θ_vector)
     σ = pm.HalfNormal('σ', sd=10)
 
-    y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=y)
+    y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=y_train)
     vi = pm.fit()
-    pm.plot_posterior(vi.sample(1000))
+    posterior = vi.sample(1000)
+    pm.plot_posterior(posterior)
 
 plt.show()
