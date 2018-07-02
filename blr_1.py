@@ -61,8 +61,10 @@ with model:
                           pm.Normal('theta', mu=0, sd=10) * X),
                       sd=std,
                       observed=y.values)
-    step = pm.NUTS()
-    trace = pm.sample(1000, step)
+    trace = pm.sample(1000)
+
+pm.traceplot(trace)
+plt.show()
 
 sns.lmplot('Duration', 'Calories', df, fit_reg=False)
 pm.plot_posterior_predictive_glm(
@@ -75,7 +77,7 @@ plt.legend()
 plt.show()
 
 # Prediction
-x = 15
+x = 20
 ols_yhat = predict_ols(x, intercept, theta)
 bayes_pred = bayesian_predictive_distribution(x, trace)
 sns.kdeplot(bayes_pred, label='Bayes Posterior Predictive Distribution')
