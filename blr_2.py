@@ -8,8 +8,6 @@ import numpy as np
 
 import pymc3 as pm
 
-from scipy.stats import mode
-
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
@@ -121,5 +119,5 @@ print('Baseline (training set mean) produced test set Mean Squared Error: '
       '{0:.4f}'.format(base_mse))
 ols_mse = mean_squared_error(y_test, ols_yhat)
 print('OLS produced test set Mean Squared Error: {0:.4f}'.format(ols_mse))
-mse = mean_squared_error(y_test, mode(yhat, axis=1)[0])
+mse = mean_squared_error(y_test, yhat.mean(axis=1))
 print('BLR produced test set Mean Squared Error: {0:.4f}'.format(mse))
