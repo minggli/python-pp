@@ -4,13 +4,15 @@ import warnings
 
 import pandas as pd
 import numpy as np
-from scipy.linalg import solve_triangular
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from sklearn.linear_model import LinearRegression
 import pymc3 as pm
+
+from ols import ols
 
 warnings.simplefilter('ignore')
 mpl.rcParams['figure.dpi'] = 100
@@ -23,36 +25,6 @@ def resample(dataframe, s=500):
     assert s < m
     subset = np.random.choice(m, s, replace=False)
     return dataframe.loc[subset].copy(deep=False).reset_index(drop=True)
-
-
-def ols(X, y):
-    """Frequestist least square solution."""
-    # X @ B = y
-    # X.T @ X @ B = X.T @ y
-    # QR decomposition of X and avoid covaraince matrix inversion.
-    # (Q @ R).T @ (Q @ R) @ B = X.T @ y
-    # R.T @ (Q.T @ Q) @ R @ B = X.T @ y
-    # Q is orthogonal so Q.T = inv(Q) and Q.T @ Q = I
-    # R.T @ R @ B = R.T @ Q.T @ y
-    # R @ B = Q.T @ y
-    # R is upper triangle so solve using back subsubstitution or invert R
-    # back subsubstitution:
-    # Ax = y where y = Q.T @ y and A = R
-    # inverting:
-    # R**-1 @ R @ B = R**-1 @ Q.T @ y
-    # B = R**(-1) @ Q.T @ y
-    X, y = np.array(X), np.array(y)
-    if X.ndim == 1:
-        X = X.reshape(-1, 1)
-
-    X_offset, y_offset = np.mean(X), np.mean(y)
-    X -= X_offset
-    y -= y_offset
-    q, r = np.linalg.qr(X)
-    assert np.allclose(X, q @ r)
-    theta = solve_triangular(r, q.T @ y, lower=False)
-    intercept = y_offset - np.dot(X_offset, theta.T)
-    return intercept, theta
 
 
 def predict_ols(X, intercept, theta):
