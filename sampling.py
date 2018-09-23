@@ -13,7 +13,7 @@ def maybe_decorate(func):
         f = jit(func, nopython=True, fastmath=True, parallel=True)
     except AssertionError:
         f = jit(func)
-    except AttributeError:
+    except:
         f = func
     finally:
         return f
