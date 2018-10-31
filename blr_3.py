@@ -28,48 +28,56 @@ def subsample(array_like, s, replace=True):
         return copy(array_like[subsampled_index])
 
 
-np.random.seed(0)
+# np.random.seed(0)
 
 raw = pd.read_csv('./data/exercise.csv').merge(
         pd.read_csv('./data/calories.csv')).drop(['User_ID'], axis=1)
-df = subsample(raw, 500, replace=False)
+df = subsample(raw, 10000, replace=False)
 df['Gender'] = df['Gender'].apply(lambda x: 1 if x == 'male' else 0).astype(np.uint8)
 
 X_train = df.loc[:, df.columns.difference(['Calories', 'Gender'])]
-X_train = df.loc[:, ['Duration']]
-y_train = df.loc[:, ['Calories']]
+X = df.loc[:, ['Age', 'Duration']]
+y = df.loc[:, ['Calories']]
 
-_, n = X_train.shape
+_, n = X.shape
 
 lr = LinearRegression(fit_intercept=True)
-lr.fit(X_train, y_train)
+lr.fit(X, y)
 print(f"OLS estimated intercept: {lr.intercept_}, betas: {lr.coef_}")
 
-with pm.Model() as blr:
+model = pm.Model()
+# Old codes
+
+with model:
     intercept = pm.Normal('intercept', mu=0, sd=10)
     θ = pm.Normal('θ', mu=0, sd=10, shape=n)
-    μ = intercept + pm.math.dot(X_train, θ)
-    σ = pm.HalfNormal('σ', sd=10)
-    y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=y_train)
+    # μ = intercept + pm.math.dot(X.values, θ)
+    # TODO dot product doesn't seem to work
+    μ = intercept
+    for k in range(n):
+        μ += θ[k] * X.values[:, k].reshape(-1, 1)
+    σ = pm.HalfNormal('σ', sd=5)
+    y_obs = pm.Normal('yhat', mu=μ, sd=σ, observed=y)
 
-print('finished specifying model')
 
-with blr:
+print('finished specifying model:')
+print(model.check_test_point())
+
+with model:
+    sampler = pm.Metropolis()
+    print("Sampling using Metropolis-Hastings:")
+    trace = pm.sample(10000, tuning=500, step=sampler)
+
+with model:
     map_estimates = pm.find_MAP()
 print(f"Maximum-a-Posteriori estimates: {map_estimates}")
 
 print("Automatic Differentation Variational Inference")
-with blr:
+with model:
     inference = pm.ADVI()
-    approx = pm.fit(20000, method=inference)
-    vi_trace = approx.sample(draws=5000)
-
-print("Sampling methods using Metropolis-Hastings")
-with blr:
-    sampler = pm.Metropolis()
-    trace = pm.sample(5000, tuning=500, step=sampler)
+    approx = pm.fit(50000, method=inference)
+    vi_trace = approx.sample(draws=10000)
 
 pm.traceplot(vi_trace)
 pm.traceplot(trace)
 plt.show()
-
