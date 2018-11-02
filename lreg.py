@@ -29,8 +29,12 @@ with model:
     intercept = pm.Normal('intercept', mu=0, sd=10)
     θ = pm.Normal('θ', mu=0, sd=1, shape=(n))
     z = intercept + pm.math.dot(X, θ)
+
     logit = pm.math.sigmoid(z)
     likelihood = pm.Bernoulli('yhat', logit_p=logit, observed=y)
+
+with model:
+    map_estimates = pm.find_MAP()
 
 with model:
     step = pm.NUTS()
@@ -38,7 +42,8 @@ with model:
 
 lreg = LogisticRegression()
 lreg.fit(X.reshape(-1, n), y)
-print(f"logit: {lreg.intercept_}, betas: {lreg.coef_}")
+print(f"OLS Logistics Regression logit: {lreg.intercept_}, betas: {lreg.coef_}")
+print(f"MAP {map_estimates}")
 
 pm.traceplot(trace)
 plt.show()
