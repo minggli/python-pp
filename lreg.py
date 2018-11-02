@@ -19,7 +19,7 @@ mpl.style.use('ggplot')
 warnings.simplefilter('ignore')
 
 X, y = load_breast_cancer(return_X_y=True)
-X = X[:, :3]
+X = X[:, :2]
 X = StandardScaler().fit_transform(X)
 m, n = X.shape
 
@@ -27,9 +27,8 @@ model = pm.Model()
 
 with model:
     intercept = pm.Normal('intercept', mu=0, sd=10)
-    θ = pm.Normal('θ', mu=0, sd=1, shape=(n))
+    θ = pm.Normal('θ', mu=0, sd=10, shape=(n))
     z = intercept + pm.math.dot(X, θ)
-
     logit = pm.math.sigmoid(z)
     likelihood = pm.Bernoulli('yhat', logit_p=logit, observed=y)
 
@@ -47,3 +46,4 @@ print(f"MAP {map_estimates}")
 
 pm.traceplot(trace)
 plt.show()
+
