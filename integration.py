@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+import numpy as np
+from scipy.integrate import quad, trapz
+
+
+def quadratic(z):
+    return - np.square(z) + 2 * z - 1
+
+
+x = np.linspace(-1, 2, 1000)
+y = np.fromiter((quadratic(i) for i in x), dtype=np.float32)
+
+trapezoidal = trapz(y, x)
+quadrature, _ = quad(quadratic, -1, 2)
+assert np.isclose(trapezoidal, quadrature)
