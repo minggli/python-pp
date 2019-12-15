@@ -20,6 +20,10 @@ from tqdm import tqdm
 sns.set()
 
 
+def simple_p(x):
+    return stats.norm.pdf(x, 30, 10)
+
+
 def dummy_p(x):
     val = stats.norm.pdf(x, loc=30, scale=10)
     val += stats.norm.pdf(x, loc=80, scale=20)
@@ -42,7 +46,7 @@ def metropolis_hastings(p: Callable, n_iter: int = 1000, burn_in: int = 200):
         # so using Gaussian proposal, MH reduces to Metropolis algorithm.
 
         # draw a sample from proposal distribution q(x_t|x_t_1)
-        X_t = X_t_1 + np.random.normal(scale=5)
+        X_t = X_t_1 + np.random.normal(scale=1)
 
         r_acceptance = min(1, p(X_t) / p(X_t_1))
         if r_acceptance > mu_arr[i]:
@@ -57,10 +61,12 @@ def metropolis_hastings(p: Callable, n_iter: int = 1000, burn_in: int = 200):
 
 
 if __name__ == "__main__":
-    simulation = metropolis_hastings(dummy_p, n_iter=50000, burn_in=5000)
+
+    target_p = dummy_p
+    simulation = metropolis_hastings(target_p, n_iter=50000, burn_in=5000)
 
     X = np.linspace(0, 200, 15000)
-    true_samples = list(map(dummy_p, X))
+    true_samples = list(map(target_p, X))
 
     fig, ax = plt.subplots(2, 1, sharex=True, sharey=True)
     sns.distplot(simulation, ax=ax[0])
