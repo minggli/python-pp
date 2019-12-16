@@ -45,7 +45,7 @@ def metropolis_hastings(p: Callable, n_iter: int = 1000, burn_in: int = 200):
         # Gaussian has symmetricity so q(X_t_1|X_t) = q(X_t|X_t_1)
         # so using Gaussian proposal, MH reduces to Metropolis algorithm.
 
-        # draw a sample from proposal distribution q(x_t|x_t_1)
+        # draw from proposal distribution formed of Markov Chain: q(x_t|x_t_1)
         X_t = X_t_1 + np.random.normal(scale=1)
 
         r_acceptance = min(1, p(X_t) / p(X_t_1))
