@@ -102,4 +102,5 @@ if __name__ == "__main__":
     ax[2].get_shared_x_axes().join(ax[1], ax[2])
     ax[2].set_title("Probability Density Function")
     ax[2].plot(X, true_samples)
+    plt.tight_layout()
     plt.savefig("sampling vs actual distribution.png")
