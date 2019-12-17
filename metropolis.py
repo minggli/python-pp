@@ -66,21 +66,19 @@ def metropolis_hastings(p: Callable, n_iter: int = 1000, burn_in: int = 200):
         return samples
 
 
-def handle_args(args):
+def handle_args(args) -> Callable:
     if args.d is None:
-        target_p = asymmetric_p
+        return asymmetric_p
     else:
         if "unimodal" in args.d:
-            target_p = unimodal_p
+            return unimodal_p
         elif "bimodal" in args.d:
-            target_p = bimodal_p
+            return bimodal_p
         elif "asym" in args.d:
-            target_p = asymmetric_p
+            return asymmetric_p
         else:
             print(f"unrecognized argument value {args.d} for --d")
-            target_p = asymmetric_p
-
-    return target_p
+            return asymmetric_p
 
 
 if __name__ == "__main__":
@@ -91,13 +89,14 @@ if __name__ == "__main__":
 
     n_iter = args.iter or 50000
     target_p = handle_args(args)
-
     simulation = metropolis_hastings(target_p,
                                      n_iter=n_iter,
                                      burn_in=min(5000, n_iter / 10))
     X = np.linspace(0, 200, 15000)
     true_samples = np.exp(list(map(target_p, X)))
-    fig, ax = plt.subplots(2, 1, sharex=True, sharey=True)
+    fig, ax = plt.subplots(2, 1, sharex=True, sharey=True, figsize=(12, 9))
     sns.distplot(simulation, ax=ax[0])
+    ax[0].title.set_text("MCMC")
     ax[1].plot(X, true_samples)
-    plt.show()
+    ax[1].title.set_text("Probability Density Function")
+    plt.savefig("sampling vs actual distribution.png")
