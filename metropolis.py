@@ -32,7 +32,7 @@ def bimodal_p(x):
 
 
 def asymmetric_p(x):
-    return stats.lognorm.logpdf(x, 1, loc=30, scale=10)
+    return stats.lognorm.logpdf(x, .5, loc=30, scale=10)
 
 
 def metropolis_hastings(p: Callable, n_iter: int = 1000, burn_in: int = 200):
@@ -51,7 +51,7 @@ def metropolis_hastings(p: Callable, n_iter: int = 1000, burn_in: int = 200):
         # so using Gaussian proposal, MH reduces to Metropolis algorithm.
 
         # draw from proposal distribution formed of Markov Chain: q(x_t|x_t_1)
-        X_t = X_t_1 + np.random.normal(scale=1)
+        X_t = X_t_1 + np.random.normal()
 
         # acceptance ratio in log scale
         r_acceptance = min(0, p(X_t) - p(X_t_1))
@@ -89,14 +89,14 @@ if __name__ == "__main__":
 
     n_iter = args.iter or 50000
     target_p = handle_args(args)
-    simulation = metropolis_hastings(target_p,
-                                     n_iter=n_iter,
-                                     burn_in=min(5000, n_iter / 10))
+    samples = metropolis_hastings(target_p,
+                                  n_iter=n_iter,
+                                  burn_in=min(2000, n_iter // 10))
     X = np.linspace(0, 200, 15000)
     true_samples = np.exp(list(map(target_p, X)))
     fig, ax = plt.subplots(2, 1, sharex=True, sharey=True, figsize=(12, 9))
     ax[0].set_title("MCMC")
-    sns.distplot(simulation, ax=ax[0], bins=100)
+    sns.distplot(samples, ax=ax[0])
     ax[1].set_title("Probability Density Function")
     ax[1].plot(X, true_samples)
     plt.savefig("sampling vs actual distribution.png")
