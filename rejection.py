@@ -11,7 +11,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from scipy.stats import norm
+from scipy.stats import norm, lognorm
 from tqdm import tqdm
 from numba import jit
 
@@ -29,6 +29,14 @@ def maybe_decorate(func):
         f = func
     finally:
         return f
+
+
+def unimodal_p(x):
+    return norm.pdf(x, loc=30, scale=10)
+
+
+def asymmetric_p(x):
+    return lognorm.pdf(x, .5, loc=30, scale=10)
 
 
 def bimodal_p(x):
@@ -95,14 +103,16 @@ def inverse_sampling(quantile_func, *params, sample_size=100, sort=True):
 
 if __name__ == "__main__":
     sns.set()
-    samples = rejection_sampling(bimodal_p,
+    target_p = unimodal_p
+    samples = rejection_sampling(target_p,
                                  support=[0, 200],
                                  sample_size=20000)
     x = np.linspace(0, 200, 20000)
-    true_samples = np.fromiter((bimodal_p(i) for i in x), dtype=np.float32)
+    true_samples = np.fromiter((target_p(i) for i in x), dtype=np.float32)
     fig, ax = plt.subplots(2, 1, sharex=True, sharey=True, figsize=(12, 9))
     ax[0].set_title("Rejection Sampling")
-    ax[0].scatter(list(zip(*samples))[0], list(zip(*samples))[1], s=0.1)
+    sns.distplot(list(zip(*samples))[0], ax=ax[0])
+    # ax[0].scatter(list(zip(*samples))[0], list(zip(*samples))[1], s=0.1)
     ax[1].set_title("Probability Density Function")
     ax[1].plot(x, true_samples)
     plt.savefig("sampling vs actual distribution.png")
