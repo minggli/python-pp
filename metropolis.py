@@ -18,8 +18,6 @@ import seaborn as sns
 from scipy import stats
 from tqdm import tqdm
 
-sns.set()
-
 
 def unimodal_p(x):
     return stats.norm.logpdf(x, 30, 10)
@@ -44,21 +42,21 @@ def metropolis_hastings(p: Callable, n_iter: int = 1000, burn_in: int = 200):
     samples = np.zeros((n_iter, k))
     mu_arr = np.log(np.random.rand(n_iter))
 
-    for i in tqdm(range(n_iter), desc="Metropolis Hastings"):
+    for t in tqdm(range(n_iter), desc="Metropolis Hastings"):
         # MH criterion:
         # [p(X_t) * q(X_t_1|X_t)] / [p(X_t_1) * q(X_t|X_t_1)]
         # Gaussian has symmetricity so q(X_t_1|X_t) = q(X_t|X_t_1)
         # so using Gaussian proposal, MH reduces to Metropolis algorithm.
 
-        # draw from proposal distribution formed of Markov Chain: q(x_t|x_t_1)
+        # draw from proposal distribution centered t_1 in Markov Chain: q(x_t|x_t_1)
         X_t = X_t_1 + np.random.normal()
 
         # acceptance ratio in log scale
         r_acceptance = min(0, p(X_t) - p(X_t_1))
-        if r_acceptance > mu_arr[i]:
+        if r_acceptance > mu_arr[t]:
             X_t_1 = X_t
 
-        samples[i] = X_t_1
+        samples[t] = X_t_1
 
     if burn_in:
         return samples[int(burn_in):]
@@ -87,20 +85,22 @@ if __name__ == "__main__":
     parser.add_argument("--iter", type=int)
     args = parser.parse_args()
 
+    sns.set_theme()
+
     n_iter = args.iter or 50000
     target_p = handle_args(args)
     samples = metropolis_hastings(target_p,
                                   n_iter=n_iter,
                                   burn_in=min(2000, n_iter // 10))
-    X = np.linspace(0, 200, 15000)
-    true_samples = np.exp(list(map(target_p, X)))
-    fig, ax = plt.subplots(3, 1, figsize=(12, 9))
-    ax[0].set_title("Markov Chain")
-    ax[0].plot(samples)
-    ax[1].set_title("MCMC Sampling")
-    sns.distplot(samples, ax=ax[1])
-    ax[2].get_shared_x_axes().join(ax[1], ax[2])
-    ax[2].set_title("Probability Density Function")
-    ax[2].plot(X, true_samples)
+    X = np.linspace(-50, 150, 15000)
+    y = np.exp(list(map(target_p, X)))
+    fig, axes = plt.subplots(3, 1, figsize=(12, 9))
+    axes[0].set_title("Markov Chain")
+    axes[0].plot(samples)
+    axes[1].set_title("MCMC Sampling")
+    sns.histplot(samples, ax=axes[1], legend=False)
+    axes[2].sharex(axes[1])
+    axes[2].set_title("Probability Density Function")
+    axes[2].plot(X, y)
     plt.tight_layout()
-    plt.savefig("sampling vs actual distribution.png")
+    plt.savefig("MCMC sampling and PDFs.png")
