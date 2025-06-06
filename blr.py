@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
-bayesian linear regression (motivation example from PyMC3)
+bayesian linear regression (motivation example from pymc)
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-import pymc3 as pm
+import pymc as pm
 plt.style.use('ggplot')
 
 # Initialize random number generator
@@ -39,16 +39,16 @@ Y = alpha + beta[0]*X1 + beta[1]*X2 + np.random.randn(size)*sigma
 model = pm.Model()
 with model:
     # Priors P(alpha, beta, sigma) for unknown model parameters
-    alpha = pm.Normal('alpha', mu=0, sd=10)
-    beta = pm.Normal('beta', mu=0, sd=10, shape=2)
-    sigma = pm.HalfNormal('sigma', sd=1)
+    alpha = pm.Normal('alpha', mu=0, sigma=10)
+    beta = pm.Normal('beta', mu=0, sigma=10, shape=2)
+    sigma = pm.HalfNormal('sigma', sigma=1)
 
     # Expected value of outcome, 𝘶 = alpha + B * X
     mu = alpha + beta[0]*X1 + beta[1]*X2
 
     # Likelihood (sampling distribution) of observations
     # P(y|𝘶, 𝜎)
-    Y_obs = pm.Normal('Y_obs', mu=mu, sd=sigma, observed=Y)
+    Y_obs = pm.Normal('Y_obs', mu=mu, sigma=sigma, observed=Y)
 
 # maximum a posteriori only provides point estimate of parameters?
 # TODO instead of posterior distribution of theta?
@@ -59,5 +59,5 @@ with model:
     # draw 500 posterior samples
     trace = pm.sample(500)
 
-pm.traceplot(trace)
+pm.plot_trace(trace)
 plt.show()

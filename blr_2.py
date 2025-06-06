@@ -6,7 +6,7 @@ import warnings
 import pandas as pd
 import numpy as np
 
-import pymc3 as pm
+import pymc as pm
 
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LinearRegression
@@ -82,15 +82,15 @@ X_train, X_test, y_train, y_test = \
 model = pm.Model()
 with model:
     # bayesian linear regression
-    intercept = pm.Normal('intercept', mu=0, sd=10)
-    θ_vector = pm.Normal('θ', mu=0, sd=10, shape=n_var)
+    intercept = pm.Normal('intercept', mu=0, sigma=10)
+    θ_vector = pm.Normal('θ', mu=0, sigma=10, shape=n_var)
     μ = intercept + pm.math.dot(X_train, θ_vector[:, np.newaxis])
-    σ = pm.HalfNormal('σ', sd=10)
+    σ = pm.HalfNormal('σ', sigma=10)
     # y ~ N(intercept + θ.T @ X, σ)
-    y_obs = pm.Normal('y_obs', mu=μ, sd=σ, observed=y_train)
+    y_obs = pm.Normal('y_obs', mu=μ, sigma=σ, observed=y_train)
     posterior = pm.sample(1000, tune=1000)
     try:
-        pm.traceplot(posterior)
+        pm.plot_trace(posterior)
     except AttributeError:
         pass
     pm.plot_posterior(posterior)

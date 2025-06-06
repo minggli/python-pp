@@ -4,8 +4,8 @@ import warnings
 
 import pandas as pd
 import numpy as np
-import pymc3 as pm
-from pymc3.distributions.discrete import Bernoulli
+import pymc as pm
+from pymc.distributions.discrete import Bernoulli
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -26,8 +26,8 @@ m, n = X.shape
 model = pm.Model()
 
 with model:
-    intercept = pm.Normal('intercept', mu=0, sd=10)
-    θ = pm.Normal('θ', mu=0, sd=10, shape=(n))
+    intercept = pm.Normal('intercept', mu=0, sigma=10)
+    θ = pm.Normal('θ', mu=0, sigma=10, shape=(n))
     z = intercept + pm.math.dot(X, θ)
     logit = pm.math.sigmoid(z)
     likelihood = pm.Bernoulli('yhat', logit_p=logit, observed=y)
@@ -44,6 +44,6 @@ lreg.fit(X.reshape(-1, n), y)
 print(f"OLS Logistics Regression logit: {lreg.intercept_}, betas: {lreg.coef_}")
 print(f"MAP {map_estimates}")
 
-pm.traceplot(trace)
+pm.plot_trace(trace)
 plt.show()
 

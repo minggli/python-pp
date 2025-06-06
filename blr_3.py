@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 
 import matplotlib.pyplot as plt
-import pymc3 as pm
+import pymc as pm
 
 
 def subsample(array_like, s, replace=True):
@@ -49,15 +49,15 @@ model = pm.Model()
 # Old codes
 
 with model:
-    intercept = pm.Normal('intercept', mu=0, sd=10)
-    θ = pm.Normal('θ', mu=0, sd=10, shape=n)
+    intercept = pm.Normal('intercept', mu=0, sigma=10)
+    θ = pm.Normal('θ', mu=0, sigma=10, shape=n)
     # μ = intercept + pm.math.dot(X.values, θ)
     # TODO dot product doesn't seem to work
     μ = intercept
     for k in range(n):
         μ += θ[k] * X.values[:, k].reshape(-1, 1)
-    σ = pm.HalfNormal('σ', sd=5)
-    y_obs = pm.Normal('yhat', mu=μ, sd=σ, observed=y)
+    σ = pm.HalfNormal('σ', sigma=5)
+    y_obs = pm.Normal('yhat', mu=μ, sigma=σ, observed=y)
 
 
 print('finished specifying model:')
@@ -78,6 +78,6 @@ with model:
     approx = pm.fit(50000, method=inference)
     vi_trace = approx.sample(draws=10000)
 
-pm.traceplot(vi_trace)
-pm.traceplot(trace)
+pm.plot_trace(vi_trace)
+pm.plot_trace(trace)
 plt.show()

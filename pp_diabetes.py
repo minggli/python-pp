@@ -7,7 +7,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.datasets import load_diabetes
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
-import pymc3 as pm
+import pymc as pm
 import seaborn as sns
 
 # np.random.seed(0)
@@ -25,12 +25,12 @@ print(f"OLS estimated intercept: {lr.intercept_}, betas: {lr.coef_}")
 model = pm.Model()
 
 with model:
-    intercept = pm.Normal('intercept', mu=0, sd=10)
-    θ = pm.Normal('θ', mu=0, sd=10, shape=(n))
+    intercept = pm.Normal('intercept', mu=0, sigma=10)
+    θ = pm.Normal('θ', mu=0, sigma=10, shape=(n))
     μ = intercept + pm.math.dot(X, θ)
     # TODO dot product doesn't seem to work
-    σ = pm.HalfNormal('σ', sd=10)
-    y_obs = pm.Normal('yhat', mu=μ, sd=σ, observed=y)
+    σ = pm.HalfNormal('σ', sigma=10)
+    y_obs = pm.Normal('yhat', mu=μ, sigma=σ, observed=y)
 
 
 print('finished specifying model:')
@@ -51,6 +51,6 @@ with model:
     approx = pm.fit(30000, method=inference)
     vi_trace = approx.sample(draws=5000)
 
-pm.traceplot(trace)
-pm.traceplot(vi_trace)
+pm.plot_trace(trace)
+pm.plot_trace(vi_trace)
 plt.show()
