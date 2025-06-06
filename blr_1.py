@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from sklearn.linear_model import LinearRegression
-import pymc3 as pm
+import pymc as pm
+import arviz as az
 
 from ols import ols
 
@@ -33,7 +34,7 @@ def predict_ols(X, intercept, theta):
 
 
 def bayesian_predictive_distribution(x, trace):
-    return trace['theta'] * x + trace['intercept']
+    return trace.posterior['theta'] * x + trace.posterior['intercept']
 
 
 raw = pd.read_csv('./data/exercise.csv').merge(
@@ -45,7 +46,7 @@ y = df['Calories']
 
 lr = LinearRegression()
 lr.fit(X.to_frame(), y)
-base = np.linspace(1, X.max(), 100)
+base = np.linspace(1, X.max(), 1000)
 intercept, theta = ols(X, y)
 # check if manual OLS estimate is same as framework estimate
 assert np.isclose(intercept, lr.intercept_)
@@ -55,24 +56,19 @@ yhat = predict_ols(base, intercept, theta)
 
 model = pm.Model()
 with model:
-    std = pm.HalfNormal('standard deviation', sd=10)
-    y_obs = pm.Normal('yhat',
-                      mu=(pm.Normal('intercept', mu=0, sd=10) +
-                          pm.Normal('theta', mu=0, sd=10) * X),
-                      sd=std,
+    y_model = pm.Normal('y_model',
+                      mu=(pm.Normal('intercept', mu=0, sigma=10) +
+                          pm.Normal('theta', mu=0, sigma=10) * X),
+                      sigma=pm.HalfNormal('standard deviation', sigma=10),
                       observed=y.values)
     trace = pm.sample(1000)
 
-pm.traceplot(trace)
+pm.plot_trace(trace)
 plt.show()
 
-sns.lmplot('Duration', 'Calories', df, fit_reg=False)
-pm.plot_posterior_predictive_glm(
-    trace, samples=100, eval=base, linewidth=.3, color='r', alpha=0.8,
-    label='Bayesian Posterior Predictive',
-    lm=lambda x, sample: sample['intercept'] + sample['theta'] * x)
-plt.plot(base, yhat, color='black', linestyle='dashed',
-         label='Ordinary Least Square')
+plt.plot(base, yhat, color='black', linestyle='dashed', label='Ordinary Least Square')
+plt.xlabel(X.name)
+az.plot_lm(idata=trace, y=y, num_samples=100, y_hat="y_model", axes=plt.gca())
 plt.legend()
 plt.show()
 
@@ -80,6 +76,7 @@ plt.show()
 x = 20
 ols_yhat = predict_ols(x, intercept, theta)
 bayes_pred = bayesian_predictive_distribution(x, trace)
+
 sns.kdeplot(bayes_pred, label='Bayes Posterior Predictive Distribution')
 plt.vlines(x=ols_yhat, ymin=0, ymax=2.5,
            label='OLS Prediction', colors='red', linestyles='--')
