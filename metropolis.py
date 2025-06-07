@@ -103,4 +103,4 @@ if __name__ == "__main__":
     axes[2].set_title("Probability Density Function")
     axes[2].plot(X, y)
     plt.tight_layout()
-    plt.savefig("MCMC sampling and PDFs.png")
+    plt.savefig("MCMC_sampling_and_pdfs.png")
