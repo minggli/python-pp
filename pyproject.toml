@@ -8,6 +8,7 @@ dependencies = [
     "arviz>=0.21.0",
     "jupyter>=1.1.1",
     "matplotlib>=3.10.3",
+    "numba>=0.61.2",
     "numpy>=2.2.6",
     "pymc>=5.23.0",
     "scikit-learn>=1.7.0",
