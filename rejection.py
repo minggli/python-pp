@@ -5,6 +5,7 @@ multiprocessing rejection sampler
 """
 
 import sys
+import multiprocessing
 from multiprocessing import Value, Process, Manager, cpu_count, current_process
 
 import numpy as np
@@ -102,17 +103,19 @@ def inverse_sampling(quantile_func, *params, sample_size=100, sort=True):
 
 
 if __name__ == "__main__":
-    sns.set()
-    target_p = unimodal_p
+    sns.set_theme()
+    multiprocessing.set_start_method('fork')
+
+    target_p = bimodal_p
     samples = rejection_sampling(target_p,
                                  support=[0, 200],
                                  sample_size=20000)
     x = np.linspace(0, 200, 20000)
     true_samples = np.fromiter((target_p(i) for i in x), dtype=np.float32)
-    fig, ax = plt.subplots(2, 1, sharex=True, sharey=True, figsize=(12, 9))
+    fig, ax = plt.subplots(2, 1, sharex=True, sharey=False, figsize=(12, 9))
     ax[0].set_title("Rejection Sampling")
-    sns.distplot(list(zip(*samples))[0], ax=ax[0])
+    sns.histplot(list(zip(*samples))[0], ax=ax[0])
     # ax[0].scatter(list(zip(*samples))[0], list(zip(*samples))[1], s=0.1)
     ax[1].set_title("Probability Density Function")
     ax[1].plot(x, true_samples)
-    plt.savefig("sampling vs actual distribution.png")
+    plt.savefig("rejection_sampling_and_pdf.png")
